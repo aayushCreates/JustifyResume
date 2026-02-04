@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  RECRUITER
+  ADMIN
+}
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  role      Role
+
+  googleId  String  @unique
+  reports   Report[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Resume {
+  id          String   @id @default(uuid())
+  rawText     String
+  parsedJson  Json
+  
+  reports     Report[]
+
+  createdAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id             String   @id @default(uuid())
+  githubUsername String?
+  status         ReportStatus
+  riskScore      Int?
+  credibility    Int?
+  
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+
+  resumeId       String
+  resume         Resume   @relation(fields: [resumeId], references: [id])
+
+  skills         SkillScore[]
+  redFlags       RedFlag[]
+
+  createdAt      DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model SkillScore {
+  id       String @id @default(uuid())
+  skill    String
+  score    Float
+
+  reportId String
+  report  Report  @relation(fields: [reportId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RedFlag {
+  id       String @id @default(uuid())
+  message  String
+  severity String
+
+  reportId String
+  report  Report  @relation(fields: [reportId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
