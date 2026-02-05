@@ -19,13 +19,22 @@ enum ReportStatus {
   FAILED
 }
 
+enum RedFlagSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 model User {
   id        String   @id @default(uuid())
+  name      String
   email     String   @unique
   role      Role
 
   googleId  String  @unique
   reports   Report[]
+
+  resume    Resume[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -37,6 +46,9 @@ model Resume {
   parsedJson  Json
   
   reports     Report[]
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+
 
   createdAt   DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -48,6 +60,7 @@ model Report {
   status         ReportStatus
   riskScore      Int?
   credibility    Int?
+  analysisMeta   Json?
   
   userId         String
   user           User     @relation(fields: [userId], references: [id])
@@ -78,7 +91,7 @@ model SkillScore {
 model RedFlag {
   id       String @id @default(uuid())
   message  String
-  severity String
+  severity RedFlagSeverity
 
   reportId String
   report  Report  @relation(fields: [reportId], references: [id])
