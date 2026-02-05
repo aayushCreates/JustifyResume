@@ -4,6 +4,7 @@ import {
   findOrCreateUser,
   getGoogleUserInfo,
 } from "../services/auth.service";
+import { getJWT } from "../utils/auth.utils";
 
 const cookieOptions = {
     httpOnly: true,
