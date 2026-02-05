@@ -18,6 +18,7 @@
     "axios": "^1.13.4",
     "dotenv": "^17.2.3",
     "fastify": "^5.7.4",
+    "ioredis": "^5.9.2",
     "jsonwebtoken": "^9.0.3",
     "tsconfig-paths": "^4.2.0",
     "zod": "^4.3.6"
