@@ -6,7 +6,7 @@ export default async function getPdfInfo(url: string) {
         url: url
     });
 
-    const result = await parser.getText();
+    const result = await parser.getText() as any;
 
     return result;
 }
