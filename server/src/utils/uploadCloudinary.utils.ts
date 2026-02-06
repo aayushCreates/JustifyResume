@@ -1,8 +1,8 @@
+import { Readable } from "stream";
 import cloudinary from "../config/cloudinary.config";
-import streamifier from "streamifier";
 
-export default async function uploadToCloudinary(buffer: Buffer) {
-  return new Promise<any> ((resolve: any, reject: any) => {
+export default async function uploadPdfToCloudinary(fileStream: Readable) {
+  return new Promise((resolve: any, reject: any) => {
     const uploadStream = cloudinary.uploader.upload_stream(
         {
             folder: "resumes",
@@ -15,6 +15,6 @@ export default async function uploadToCloudinary(buffer: Buffer) {
         }
     );
 
-    streamifier.createReadStream(buffer).pipe(uploadStream);
+    fileStream.pipe(uploadStream);
   });
 }
