@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import axios from "axios";
 import { ParsedResume, Project } from "../types/resume.types";
 
@@ -11,9 +10,28 @@ type GitHubRepoSummary = {
   url: string;
 };
 
-const prisma = new PrismaClient();
+type SkillVerdict = {
+  skill: string;
+  supportedRepos: string[];
+  languageMatch: boolean;
+  avgOwnership: number;
+  avgCommits: number;
+  verdict: "VERIFIED" | "PARTIAL" | "UNVERIFIED";
+};
 
-export async function analyzeGithub (parsedResume: ParsedResume, gitUserName: string){
+type AnalysedGithubRepo = {
+  repoName: string;
+  languages: string[];
+  commitCount: number;
+  commitSpanDays: number;
+  ownershipPercentage: number;
+  readmeSnippet: string;
+};
+
+export async function analyzeGithub(
+  parsedResume: ParsedResume,
+  gitUserName: string
+) {
   const resumeProjects = parsedResume.projects ?? [];
 
   const { data: repos } = await axios.get(
@@ -22,7 +40,7 @@ export async function analyzeGithub (parsedResume: ParsedResume, gitUserName: st
       params: { per_page: 100, sort: "updated" },
       headers: {
         Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-      },    
+      },
     }
   );
 
@@ -35,26 +53,22 @@ export async function analyzeGithub (parsedResume: ParsedResume, gitUserName: st
     url: repo.html_url,
   }));
 
-  const normalize = (s: string) =>
-    s.toLowerCase().replace(/[-_\s]/g, "");
-  
+  const normalize = (s: string) => s.toLowerCase().replace(/[-_\s]/g, "");
+
   const resumeRepos = normalizedRepos.filter((repo) =>
     resumeProjects.some((p: Project) =>
-      p.name
-        ? normalize(repo.name).includes(normalize(p.name))
-        : false
+      p.name ? normalize(repo.name).includes(normalize(p.name)) : false
     )
   );
 
   const recentRepos = normalizedRepos
-  .filter((repo) => {
-    const daysAgo =
-      (Date.now() - new Date(repo.pushedAt).getTime()) /
-      (1000 * 60 * 60 * 24);
-    return !repo.fork && repo.size > 10 && daysAgo < 120;
-  })
-  .slice(0, 3);
-
+    .filter((repo) => {
+      const daysAgo =
+        (Date.now() - new Date(repo.pushedAt).getTime()) /
+        (1000 * 60 * 60 * 24);
+      return !repo.fork && repo.size > 10 && daysAgo < 120;
+    })
+    .slice(0, 3);
 
   const repoMap = new Map<string, GitHubRepoSummary>();
   [...resumeRepos, ...recentRepos].forEach((repo) => {
@@ -64,7 +78,7 @@ export async function analyzeGithub (parsedResume: ParsedResume, gitUserName: st
   const selectedRepos = Array.from(repoMap.values()).slice(0, 5);
 
   return selectedRepos;
-};
+}
 
 export async function deepAnalysisGitRepo(
   repo: GitHubRepoSummary,
@@ -87,9 +101,7 @@ export async function deepAnalysisGitRepo(
     }
   );
 
-  const commitDates = commits.map(
-    (c: any) => new Date(c.commit.author.date)
-  );
+  const commitDates = commits.map((c: any) => new Date(c.commit.author.date));
 
   const firstCommit = commitDates[commitDates.length - 1];
   const lastCommit = commitDates[0];
@@ -104,9 +116,8 @@ export async function deepAnalysisGitRepo(
     0
   );
 
-  const userContribution = contributors.find(
-    (c: any) => c.login === gitUserName
-  )?.contributions ?? 0;
+  const userContribution =
+    contributors.find((c: any) => c.login === gitUserName)?.contributions ?? 0;
 
   const ownershipPercentage =
     totalContributions > 0
@@ -121,10 +132,9 @@ export async function deepAnalysisGitRepo(
       { headers }
     );
 
-    readmeSnippet = Buffer.from(
-      readme.content,
-      "base64"
-    ).toString("utf-8").slice(0, 1500);
+    readmeSnippet = Buffer.from(readme.content, "base64")
+      .toString("utf-8")
+      .slice(0, 1500);
   } catch {
     console.log("readme.md not found for " + repo.name);
   }
@@ -142,5 +152,82 @@ export async function deepAnalysisGitRepo(
         : 0,
     ownershipPercentage,
     readmeSnippet,
+  };
+}
+
+export async function verifyResume(
+  deepedAnalysedRepos: AnalysedGithubRepo[],
+  parsedResume: ParsedResume
+) {
+  const resumeSkills = parsedResume.skills ?? [];
+  const skillResults: SkillVerdict[] = [];
+  const redFlags: string[] = [];
+
+  let verifiedCount = 0;
+
+  for (const skill of resumeSkills) {
+    const skillLower = skill.toLowerCase();
+
+    const matchingRepos = deepedAnalysedRepos.filter((repo) =>
+      repo.languages.some(
+        (lang) =>
+          lang.toLowerCase().includes(skillLower) ||
+          skillLower.includes(lang.toLowerCase())
+      )
+    );
+
+    if (matchingRepos.length === 0) {
+      redFlags.push(`Skill '${skill}' claimed but no GitHub evidence found`);
+
+      skillResults.push({
+        skill,
+        supportedRepos: [],
+        languageMatch: false,
+        avgOwnership: 0,
+        avgCommits: 0,
+        verdict: "UNVERIFIED",
+      });
+
+      continue;
+    }
+
+    const avgOwnership =
+      matchingRepos.reduce((s, r) => s + r.ownershipPercentage, 0) /
+      matchingRepos.length;
+
+    const avgCommits =
+      matchingRepos.reduce((s, r) => s + r.commitCount, 0) /
+      matchingRepos.length;
+
+    let verdict: SkillVerdict["verdict"] = "PARTIAL";
+
+    if (avgCommits >= 10 && avgOwnership >= 60) {
+      verdict = "VERIFIED";
+      verifiedCount++;
+    } else if (avgCommits < 5 || avgOwnership < 30) {
+      verdict = "UNVERIFIED";
+      redFlags.push(
+        `Weak evidence for skill '${skill}' (low commits or ownership)`
+      );
+    }
+    skillResults.push({
+      skill,
+      supportedRepos: matchingRepos.map((r) => r.repoName),
+      languageMatch: true,
+      avgOwnership: Math.round(avgOwnership),
+      avgCommits: Math.round(avgCommits),
+      verdict,
+    });
+  }
+
+  const credibilityScore =
+    resumeSkills.length === 0
+      ? 0
+      : Math.round((verifiedCount / resumeSkills.length) * 100);
+
+  return {
+    skills: skillResults,
+    credibilityScore,
+    redFlags,
   };
 }
