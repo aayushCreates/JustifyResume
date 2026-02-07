@@ -1,5 +1,9 @@
 import axios from "axios";
 import { ParsedResume, Project } from "../types/resume.types";
+import { PrismaClient, ReportStatus } from "@prisma/client";
+import { reportQueue } from "../queue/report.queue";
+
+const prisma = new PrismaClient();
 
 type GitHubRepoSummary = {
   name: string;
@@ -230,4 +234,69 @@ export async function verifyResume(
     credibilityScore,
     redFlags,
   };
+}
+
+export class AnalysisService {
+  static async analyzeResume(resumeId: string) {
+    const resume = await prisma.resume.findUnique({
+      where: { id: resumeId },
+    });
+
+    if (!resume) {
+      throw new Error("RESUME_NOT_FOUND");
+    }
+
+    const githubUrl = resume.parsedJson?.links?.github as string | undefined;
+    if (!githubUrl) {
+      throw new Error("GITHUB_URL_NOT_FOUND");
+    }
+
+    const gitUserName = githubUrl.replace(/\/$/, "").split("/").pop();
+    if (!gitUserName) {
+      throw new Error("GITHUB_USERNAME_NOT_FOUND");
+    }
+
+    const existingReport = await prisma.report.findFirst({
+      where: {
+        resumeId,
+        status: ReportStatus.PROCESSING,
+      },
+    });
+
+    if (existingReport) {
+      return {
+        reportId: existingReport.id,
+        status: existingReport.status,
+        isExisting: true,
+      };
+    }
+
+    const report = await prisma.report.create({
+      data: {
+        userId: resume.userId,
+        resumeId,
+        githubUsername: gitUserName,
+        status: ReportStatus.PROCESSING,
+      },
+    });
+
+    await reportQueue.add(
+      "analyze-resume",
+      { reportId: report.id, resumeId },
+      {
+        jobId: report.id,
+        attempts: 3,
+        backoff: {
+          type: "exponential",
+          delay: 5000,
+        },
+      }
+    );
+
+    return {
+      reportId: report.id,
+      status: report.status,
+      isExisting: false,
+    };
+  }
 }

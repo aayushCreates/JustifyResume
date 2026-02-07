@@ -1,119 +1,52 @@
-import { PrismaClient } from "@prisma/client";
 import { FastifyReply, FastifyRequest } from "fastify";
-import { analyzeGithub, deepAnalysisGitRepo, verifyResume } from "../services/analysis.service";
-import { ParsedResume } from "../types/resume.types";
+import { AnalysisService } from "../services/analysis.service";
 
-const prisma = new PrismaClient();
+interface AnalyzeResumeBody {
+  resumeId: string;
+}
 
-
-export async function analysisResume(
-    req: FastifyRequest,
-    reply: FastifyReply
+export async function analysisResumeController(
+  req: FastifyRequest<{ Body: AnalyzeResumeBody }>,
+  reply: FastifyReply
 ) {
-    try {
-        const { resumeId } = req.body as { resumeId: string };
+  try {
+    const { resumeId } = req.body;
 
-        const resume = await prisma.resume.findUnique({
-            where: {
-                id: resumeId
-            }
+    const result = await AnalysisService.analyzeResume(resumeId);
+
+    return reply.status(202).send({
+      success: true,
+      reportId: result.reportId,
+      status: result.status,
+    });
+
+  } catch (error: any) {
+    console.error("Resume analysis error:", error);
+
+    switch (error.message) {
+      case "RESUME_NOT_FOUND":
+        return reply.status(404).send({
+          success: false,
+          message: "Resume not found",
         });
-        if(!resume) {
-            return reply.code(404).send({
-                success: false,
-                message: "Resume not found",
-              });
-        }
 
-        const githubUrl = resume.parsedJson?.links?.github as string;
-        if (!githubUrl) {
-            return reply.status(404).send({
-                success: false,
-                message: "Github url is not found"
-            });
-        };
+      case "GITHUB_URL_NOT_FOUND":
+        return reply.status(404).send({
+          success: false,
+          message: "GitHub URL not found in resume",
+        });
 
-        const gitUserName = githubUrl
-        .replace(/\/$/, "")
-        .split("/")
-        .pop();
-        if (!gitUserName) {
-            return reply.status(404).send({
-                success: false,
-                message: "Github username is not found"
-            });
-        };
+      case "GITHUB_USERNAME_NOT_FOUND":
+        return reply.status(404).send({
+          success: false,
+          message: "GitHub username could not be extracted",
+        });
 
-        const report = await prisma.report.create({
-            data: {
-              userId: resume.userId,
-              resumeId,
-              githubUsername: gitUserName,
-              status: "PROCESSING",
-            },
-          });
-
-        const githubRepos = await analyzeGithub(resume.parsedJson as ParsedResume, gitUserName);
-
-        const analysedRepos = await Promise.all(
-            githubRepos.map((repo) =>
-              deepAnalysisGitRepo(repo, gitUserName)
-            )
-          );
-
-        const verifiedClaims = await verifyResume(analysedRepos, resume.parsedJson as ParsedResume);
-
-        await prisma.$transaction(async (tx) => {
-            await tx.report.update({
-              where: { id: report.id },
-              data: {
-                status: "COMPLETED",
-                credibility: verifiedClaims.credibilityScore,
-                riskScore: 100 - verifiedClaims.credibilityScore,
-                analysisMeta: {
-                  github: {
-                    username: gitUserName,
-                    reposAnalyzed: analysedRepos.length,
-                    repos: analysedRepos,
-                  },
-                },
-              },
-            });
-      
-            await tx.skillScore.createMany({
-              data: verifiedClaims.skills.map(s => ({
-                reportId: report.id,
-                skill: s.skill,
-                score: s.avgCommits,
-                verdict: s.verdict,
-                evidence: {
-                  repos: s.supportedRepos,
-                  avgOwnership: s.avgOwnership,
-                  avgCommits: s.avgCommits,
-                },
-              })),
-            });
-      
-            await tx.redFlag.createMany({
-              data: verifiedClaims.redFlags.map(msg => ({
-                reportId: report.id,
-                message: msg,
-                severity: "HIGH",
-              })),
-            });
-          });
-
-          return reply.status(200).send({
-            success: true,
-            message: "resume analysed successfully",
-            reportId: report.id,
-          });
-    }catch (err){
-        console.log("Error in resume analysis: ", err);
-    
-        return reply.code(500).send({
+      default:
+        return reply.status(500).send({
           success: false,
           message: "Server error in resume analysis",
         });
     }
+  }
 }
