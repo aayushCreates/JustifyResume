@@ -25,6 +25,12 @@ enum RedFlagSeverity {
   HIGH
 }
 
+enum SkillVerdict {
+  VERIFIED
+  PARTIAL
+  UNVERIFIED
+}
+
 model User {
   id        String   @id @default(uuid())
   name      String
@@ -80,6 +86,8 @@ model SkillScore {
   id       String @id @default(uuid())
   skill    String
   score    Float
+  verdict   SkillVerdict
+  evidence  Json? 
 
   reportId String
   report  Report  @relation(fields: [reportId], references: [id])
