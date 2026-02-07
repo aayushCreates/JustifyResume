@@ -69,6 +69,26 @@ export default function parseResumeText(
       };
     });
 
+  const projectsBlock = extractSection(rawText, "Projects");
+
+  const projects = projectsBlock
+    .split("\n")
+    .filter((l) => l.length > 10)
+    .map((line) => {
+      const linkMatch = line.match(/https?:\/\/[^\s]+/);
+
+      const techStack = knownSkills.filter((skill) =>
+        new RegExp(`\\b${skill}\\b`, "i").test(line)
+      );
+
+      return {
+        name: extractProjectName(line),
+        description: line,
+        techStack: techStack.length ? techStack : undefined,
+        link: linkMatch?.[0],
+      };
+    });
+
   const links = {
     github,
     portfolio,
@@ -82,6 +102,7 @@ export default function parseResumeText(
     skills: skills,
     experience: experience as any,
     education: education as any,
+    projects: projects as any,
     links: links,
   };
 
@@ -139,4 +160,8 @@ function extractBranch(line: string) {
   return line.match(
     /Computer Science|Information Technology|ECE|EEE|Mechanical|Civil/i
   )?.[0];
+}
+
+function extractProjectName(line: string) {
+  return line.split(/[:-]/)[0]?.trim();
 }

@@ -1,5 +1,10 @@
 
-
+export type Project = {
+  name?: string;
+  description?: string;
+  techStack?: string[];
+  link?: string;
+}
 
 export type ParsedResume = {
     name?: string;
@@ -25,5 +30,6 @@ export type ParsedResume = {
       portfolio?: string;
       linkedin?: string;
     };
+    projects?: Project[];
   };
   
