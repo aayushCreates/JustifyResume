@@ -1,12 +1,12 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import Features from "./components/Features";
-import Process from "./components/Process";
-import Comparison from "./components/Comparison";
-import FAQ from "./components/FAQ";
-import Footer from "./components/Footer";
+import Navbar from "../components/Navbar";
+import Hero from "../components/Hero";
+import Features from "../components/Features";
+import Process from "../components/Process";
+import Comparison from "../components/Comparison";
+import FAQ from "../components/FAQ";
+import Footer from "../components/Footer";
 
 
 export default function Home() {
