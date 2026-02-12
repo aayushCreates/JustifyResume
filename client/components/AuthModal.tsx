@@ -1,3 +1,4 @@
+import { useAuth } from "@/context/auth.context";
 import { useEffect } from "react";
 
 type Props = {
@@ -6,9 +7,10 @@ type Props = {
 };
 
 export default function AuthModal({ isOpen, onClose }: Props) {
+  const { oAuth } = useAuth();
+
   if (!isOpen) return null;
 
-  // close on ESC
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -18,10 +20,7 @@ export default function AuthModal({ isOpen, onClose }: Props) {
   }, [onClose]);
 
   function handleGoogleLogin() {
-    // 👉 replace with your real auth
-    // example next-auth:
-    // signIn("google");
-
+    oAuth();
     console.log("Google login clicked");
   }
 
