@@ -1,7 +1,6 @@
 import {
   Briefcase,
   Calendar,
-  Calendar1,
   CodeXml,
   GitCommitHorizontal,
   Github,
@@ -92,7 +91,7 @@ export default function ProfileCard() {
           </div>
 
           <div className="flex flex-col items-center py-6">
-            <Calendar1 size={16} className="text-gray-400" />
+            <Calendar size={16} className="text-gray-400" />
 
             <div className="mt-1">
               <p className="text-2xl font-semibold">3</p>

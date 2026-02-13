@@ -1,5 +1,5 @@
 import { useAuth } from "@/context/auth.context";
-import { Upload, ShieldCheck, Github, Globe } from "lucide-react";
+import { Upload, ShieldCheck, Github } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
