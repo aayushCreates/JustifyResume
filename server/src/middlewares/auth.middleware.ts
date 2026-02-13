@@ -4,13 +4,29 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const isUserLoggedIn = async (req: FastifyRequest, res: FastifyReply) => {
+export const isUserLoggedIn = async (req: FastifyRequest, reply: FastifyReply) => {
   try {
-    const token = req.cookies.token;
+    let token: string | undefined = undefined;
+
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7, authHeader.length);
+    } else if (req.cookies.token) {
+      token = req.cookies.token;
+    } else if (req.query && (req.query as any).token) {
+      token = (req.query as any).token as string;
+    }
+
+    if (!token) {
+      return reply.status(401).send({
+        success: false,
+        message: "Token not provided.",
+      });
+    }
 
     const validToken = await validateToken(token as string);
     if (!validToken) {
-      return res.status(401).send({
+      return reply.status(401).send({
         success: false,
         message: "Session Expired, please login",
       });
@@ -21,7 +37,7 @@ export const isUserLoggedIn = async (req: FastifyRequest, res: FastifyReply) => 
     });
 
     if (!user) {
-      return res.status(401).send({
+      return reply.status(401).send({
         success: false,
         message: "User not found",
       });
@@ -30,6 +46,6 @@ export const isUserLoggedIn = async (req: FastifyRequest, res: FastifyReply) => 
     req.user = user;
   } catch (err) {
     console.error(err);
-    return res.status(500).send({ success: false, message: "Server error" });
+    return reply.status(500).send({ success: false, message: "Server error" });
   }
 };

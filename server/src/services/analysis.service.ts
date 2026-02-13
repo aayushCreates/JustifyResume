@@ -246,7 +246,8 @@ export class AnalysisService {
       throw new Error("RESUME_NOT_FOUND");
     }
 
-    const githubUrl = resume.parsedJson?.links?.github as string | undefined;
+    const parsedJson = resume.parsedJson as unknown as ParsedResume;
+    const githubUrl = parsedJson?.links?.github;
     if (!githubUrl) {
       throw new Error("GITHUB_URL_NOT_FOUND");
     }

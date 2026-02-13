@@ -40,7 +40,7 @@ export const callbackGoogleAuth = async (req: FastifyRequest, reply: FastifyRepl
 
     const token = await getJWT(user.id, user.email);
 
-    return reply.setCookie("token", token, cookieOptions).redirect(`${process.env.FRONTEND_URL}/home`);
+    return reply.setCookie("token", token, cookieOptions).redirect(`${process.env.FRONTEND_URL}?token=${token}`);
   } catch (err: any) {
     console.error("GoogleAuth Controller ERROR:", err.message);
     return reply.status(500).send({ success: false, message: err.message || "Server error" });
@@ -49,4 +49,19 @@ export const callbackGoogleAuth = async (req: FastifyRequest, reply: FastifyRepl
 
 export const logout = async (req: FastifyRequest, reply: FastifyReply) => {
   return reply.clearCookie("token", { path: "/" }).status(200).send({ success: true });
+};
+
+export const getMe = async (req: FastifyRequest, reply: FastifyReply) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return reply.status(401).send({ success: false, message: "Unauthorized" });
+    }
+
+    return reply.status(200).send({ message: "User information fetched successfully", success: true, data: user });
+  } catch (err: any) {
+    console.error("GetMe Controller ERROR:", err.message);
+    return reply.status(500).send({ success: false, message: err.message || "Server error" });
+  }
 };

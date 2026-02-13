@@ -36,7 +36,7 @@ export async function analyzeResume(
   reply: FastifyReply
 ) {
   try {
-    const { resumeUrl, github, portfolio } = req.body as {
+    const { resumeUrl, github, portfolio, linkedin } = req.body as {
       resumeUrl: string;
       github: string;
       portfolio: string;

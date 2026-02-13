@@ -20,7 +20,8 @@ export const reportWorker = new Worker("report-analysis", async (job) => {
 
     if (!resume) throw new Error("Resume not found");
 
-    const githubUrl = resume.parsedJson?.links?.github as string;
+    const parsedJson = resume.parsedJson as unknown as ParsedResume;
+    const githubUrl = parsedJson?.links?.github as string;
     const gitUserName = githubUrl.replace(/\/$/, "").split("/").pop()!;
 
     const githubRepos = await analyzeGithub(

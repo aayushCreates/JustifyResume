@@ -2,11 +2,11 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { ReportService } from "../services/report.service";
 import { ReportStatus } from "@prisma/client";
 
-interface GetReportParams {
+export interface GetReportParams {
   resumeId: string;
 }
 
-export default async function getReportController(
+export default async function getReport(
   req: FastifyRequest<{ Params: GetReportParams }>,
   reply: FastifyReply
 ) {

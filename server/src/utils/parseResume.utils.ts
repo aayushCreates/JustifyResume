@@ -90,15 +90,15 @@ export default function parseResumeText(
     });
 
   const links = {
-    github,
-    portfolio,
-    linkedin,
+    ...(github && { github }),
+    ...(portfolio && { portfolio }),
+    ...(linkedin && { linkedin }),
   };
 
   result = {
-    name: name,
-    email: email,
-    phone: phone,
+    ...(name && { name }),
+    ...(email && { email }),
+    ...(phone && { phone }),
     skills: skills,
     experience: experience as any,
     education: education as any,

@@ -3,14 +3,24 @@ import { analyzeResume, uploadResume } from "../controllers/resume.controller";
 import { isUserLoggedIn } from "../middlewares/auth.middleware";
 
 
-export default function resumeRoute(fastify: FastifyInstance) {
-    fastify.post('/upload-resume', {
-        preHandler: isUserLoggedIn
-    }, uploadResume);
+export default function resumeRouter(
+  fastify: FastifyInstance,
+) {
+  fastify.post(
+    "/upload-resume",
+    {
+      preHandler: isUserLoggedIn,
+    },
+    uploadResume
+  );
 
-    fastify.post('/', {
-        preHandler: isUserLoggedIn
-    }, analyzeResume);
+  fastify.post(
+    "/",
+    {
+      preHandler: isUserLoggedIn,
+    },
+    analyzeResume
+  );
 }
 
 

@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { AnalysisService } from "../services/analysis.service";
 
-interface AnalyzeResumeBody {
+export interface AnalyzeResumeBody {
   resumeId: string;
 }
 

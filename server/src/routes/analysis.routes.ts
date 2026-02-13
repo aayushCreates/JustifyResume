@@ -1,10 +1,16 @@
 import { FastifyInstance } from "fastify";
 import { isUserLoggedIn } from "../middlewares/auth.middleware";
-import { analysisResume } from "../controllers/analysis.controller";
+import { analysisResumeController, AnalyzeResumeBody } from "../controllers/analysis.controller";
 
 
-export default function analysisRoute(fastify: FastifyInstance) {
-    fastify.get('/resume', {
-        preHandler: isUserLoggedIn
-    }, analysisResume);
+export default function analysisRouter(
+  fastify: FastifyInstance,
+) {
+  fastify.post<{ Body: AnalyzeResumeBody }>(
+    "/resume",
+    {
+      preHandler: isUserLoggedIn,
+    },
+    analysisResumeController
+  );
 }
