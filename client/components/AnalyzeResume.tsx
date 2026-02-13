@@ -1,3 +1,4 @@
+import { useAuth } from "@/context/auth.context";
 import { Upload, ShieldCheck, Github, Globe } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -6,6 +7,7 @@ export default function AnalyzeResume() {
   const [file, setFile] = useState<File | null>(null);
   const [github, setGithub] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { user, isAuthenticated } = useAuth();
 
   const validateAndSetFile = (selectedFile: File) => {
     if (selectedFile.type !== "application/pdf") {
@@ -32,6 +34,15 @@ export default function AnalyzeResume() {
     const droppedFile = e.dataTransfer.files?.[0];
     if (!droppedFile) return;
     validateAndSetFile(droppedFile);
+  };
+
+  const handleAnalyze = () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to analyze the resume.");
+      return;
+    }
+
+    toast.info("Analysis feature coming soon!");
   };
 
   return (
@@ -125,7 +136,11 @@ export default function AnalyzeResume() {
       </div>
 
       {/* Button */}
-      <button className="w-full py-4 rounded-lg bg-emerald-500 text-black font-medium hover:bg-emerald-400 transition mb-8">
+      <button
+        onClick={handleAnalyze}
+        disabled={!file}
+        className="w-full py-4 rounded-lg bg-emerald-500 text-black font-medium hover:bg-emerald-400 transition mb-8 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
         Analyze Resume →
       </button>
 
