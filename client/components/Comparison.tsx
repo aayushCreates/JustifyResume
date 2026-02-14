@@ -44,7 +44,7 @@ type ComparisonItem = {
           </div>
   
           {/* Heading */}
-          <h2 className="text-3xl md:text-4xl font-semibold">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold">
             Traditional hiring vs. JustifyResume
           </h2>
   

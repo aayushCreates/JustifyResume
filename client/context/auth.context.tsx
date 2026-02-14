@@ -1,14 +1,15 @@
-import { User } from "@/types/user.types";
-import { useRouter } from "next/navigation";
 import {
   ReactNode,
   createContext,
   useContext,
   useState,
   useEffect,
+  useRef, // Added useRef
 } from "react";
 import { toast } from "sonner";
 import { api } from "@/lib/api/api";
+import { User } from "@/types/user.types";
+import { useRouter } from "next/router";
 
 interface AuthContextType {
   user: User | null;
@@ -25,8 +26,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState<string | null>(null);
+  const effectRan = useRef(false); // Declare useRef here
 
   useEffect(() => {
+    if (effectRan.current) { // Prevent re-running in Strict Mode
+      return;
+    }
+    effectRan.current = true;
+
     setLoading(true);
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -44,15 +51,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     setToken(currentToken);
 
-    const verifyAuth = async (token: string | null) => {
+    const verifyAuth = async (tokenToVerify: string) => {
       try {
-        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        const config = { headers: { Authorization: `Bearer ${tokenToVerify}` } };
         const response = await api.get("/api/v1/auth/me", config);
         
         setUser(response.data.data);
 
         if (tokenFromUrl) toast.success("Logged in successfully");
       } catch (e) {
+        console.error("Authentication verification failed:", e);
         setUser(null);
         setToken(null);
         localStorage.removeItem("token");
@@ -61,7 +69,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
-    verifyAuth(currentToken);
+    if (currentToken) { // Only call backend if a token exists
+      verifyAuth(currentToken);
+    } else {
+      setUser(null);
+      setLoading(false); // Stop loading without backend call
+    }
   }, [router]);
 
   const oAuth = async () => {

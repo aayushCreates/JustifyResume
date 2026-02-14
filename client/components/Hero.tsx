@@ -5,7 +5,7 @@ export default function Hero() {
   const router = useRouter();
 
     return (
-      <section className="relative flex flex-col items-center justify-center text-center px-6 py-32 overflow-hidden">
+      <section className="relative flex flex-col items-center justify-center text-center py-32 pb-20 overflow-hidden">
   
         {/* Background Glow */}
         <div className="absolute inset-0 flex justify-center">
@@ -20,7 +20,7 @@ export default function Hero() {
           </div>
   
           {/* Heading */}
-          <h1 className="text-5xl md:text-6xl font-semibold leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-semibold leading-tight">
             Don't trust resumes.
             <br />
             <span className="text-emerald-400">Verify them.</span>

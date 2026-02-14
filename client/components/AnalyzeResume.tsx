@@ -1,13 +1,15 @@
 import { useAuth } from "@/context/auth.context";
 import { Upload, ShieldCheck, Github } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import ResumeProcessing from "./ResumeProcessing";
 
 export default function AnalyzeResume() {
   const [file, setFile] = useState<File | null>(null);
-  const [github, setGithub] = useState<string>("");
+  // const [github, setGithub] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { user, isAuthenticated } = useAuth();
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
 
   const validateAndSetFile = (selectedFile: File) => {
     if (selectedFile.type !== "application/pdf") {
@@ -36,18 +38,32 @@ export default function AnalyzeResume() {
     validateAndSetFile(droppedFile);
   };
 
+  useEffect(() => {
+    if (isAnalyzing) {
+      handleAnalyze();
+    }
+  }, [isAnalyzing]);
+
   const handleAnalyze = () => {
     if (!isAuthenticated) {
       toast.error("Please login to analyze the resume.");
+      setIsAnalyzing(false);
       return;
     }
 
-    toast.info("Analysis feature coming soon!");
+    if (!file) {
+      toast.error("Please upload a resume.");
+      setIsAnalyzing(false);
+      return;
+    }
   };
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-16 text-white">
-      {/* Badge */}
+      {
+        !isAnalyzing ? (
+          <>
+          {/* Badge */}
       <div className="flex justify-center mb-6">
         <span className="px-4 py-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 text-emerald-400 text-sm">
           ✨ AI-Powered Analysis
@@ -70,9 +86,9 @@ export default function AnalyzeResume() {
         <span className={`px-3 py-1 rounded-full bg-white/5 text-white/60`}>
           {file ? "🟢" : "○"} Resume uploaded
         </span>
-        <span className={`px-3 py-1 rounded-full bg-white/5 text-white/60`}>
+        {/* <span className={`px-3 py-1 rounded-full bg-white/5 text-white/60`}>
           {github ? "🟢" : "○"} GitHub connected
-        </span>
+        </span> */}
       </div>
 
       {/* Upload */}
@@ -116,7 +132,7 @@ export default function AnalyzeResume() {
       </div>
 
       {/* Github */}
-      <div className="mb-6">
+      {/* <div className="mb-6">
         <label className="text-sm mb-2 flex items-center gap-2">
           <Github size={14} /> GitHub Username
           <span className="text-white/40">(Optional)</span>
@@ -133,11 +149,11 @@ export default function AnalyzeResume() {
         <p className="text-xs text-white/40 mt-1">
           We'll analyze their repositories, commits, and coding patterns.
         </p>
-      </div>
+      </div> */}
 
       {/* Button */}
       <button
-        onClick={handleAnalyze}
+        onClick={() => setIsAnalyzing(true)}
         disabled={!file}
         className="w-full py-4 rounded-lg bg-emerald-500 text-black font-medium hover:bg-emerald-400 transition mb-8 disabled:opacity-50 disabled:cursor-not-allowed"
       >
@@ -158,6 +174,11 @@ export default function AnalyzeResume() {
           </p>
         </div>
       </div>
+          </>
+        ) : (
+          <ResumeProcessing resumeFile={file} />
+        )
+      }
     </div>
   );
 }
