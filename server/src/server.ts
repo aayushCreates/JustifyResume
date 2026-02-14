@@ -7,6 +7,7 @@ import fastifyCors from "@fastify/cors";
 import reportRouter from "./routes/report.routes";
 import resumeRouter from "./routes/resume.routes";
 import analysisRouter from "./routes/analysis.routes";
+import { reportWorker } from "./workers/report.worker";
 
 dotenv.config();
 
@@ -40,6 +41,7 @@ app.register(resumeRouter, {
 app.register(analysisRouter, {
   prefix: "/api/v1/analysis",
 });
+
 
 const port = Number(process.env.PORT);
 app.listen({ port }, (err, address) => {
